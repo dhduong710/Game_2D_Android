@@ -1,38 +1,80 @@
 package com.hust.demonslayer
 
+import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.ApplicationAdapter
+import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.Texture
-import com.badlogic.gdx.graphics.Texture.TextureFilter.Linear
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
-import ktx.app.KtxGame
-import ktx.app.KtxScreen
-import ktx.app.clearScreen
-import ktx.assets.disposeSafely
-import ktx.assets.toInternalFile
-import ktx.async.KtxAsync
-import ktx.graphics.use
+import com.badlogic.gdx.scenes.scene2d.Stage
+import com.badlogic.gdx.scenes.scene2d.ui.ImageButton
+import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable
+import com.badlogic.gdx.utils.viewport.ScreenViewport
+import com.hust.demonslayer.entities.Player
 
-class DemonSlayerGame : KtxGame<KtxScreen>() {
+class DemonSlayerGame: ApplicationAdapter() {
+    private lateinit var  batch: SpriteBatch        //combines multiple textures into a single command to the gpu
+    private lateinit var playerTexture: Texture
+    private lateinit var player: Player
+
+    private lateinit var stage: Stage               //contains UI objects or other actors
+    private lateinit var btnLeft: ImageButton
+    private lateinit var btnRight: ImageButton
+    private lateinit var btnJump: ImageButton
+
     override fun create() {
-        KtxAsync.initiate()
+        batch = SpriteBatch()
+        playerTexture = Texture("player.png")
+        player = Player()
 
-        addScreen(FirstScreen())
-        setScreen<FirstScreen>()
+        stage = Stage(ScreenViewport(), batch)
+        Gdx.input.inputProcessor = stage
+
+        btnLeft = ImageButton(TextureRegionDrawable(Texture("ui/btn_left.png")))
+        btnRight = ImageButton(TextureRegionDrawable(Texture("ui/btn_right.png")))
+        btnJump = ImageButton(TextureRegionDrawable(Texture("ui/btn_jump.png")))
+
+        btnLeft.setSize(100f, 100f)
+        btnRight.setSize(100f, 100f)
+        btnJump.setSize(100f, 100f)
+
+        btnLeft.setPosition(50f, 50f)
+        btnRight.setPosition(170f, 50f)
+        btnJump.setPosition(Gdx.graphics.width -150f, 50f)
+
+
+        stage.addActor(btnLeft)
+        stage.addActor(btnRight)
+        stage.addActor(btnJump)
     }
-}
 
-class FirstScreen : KtxScreen {
-    private val image = Texture("logo.png".toInternalFile(), true).apply { setFilter(Linear, Linear) }
-    private val batch = SpriteBatch()
+    override fun render() {
 
-    override fun render(delta: Float) {
-        clearScreen(red = 0.7f, green = 0.7f, blue = 0.7f)
-        batch.use {
-            it.draw(image, 100f, 160f)
-        }
+        // calculate new coordinates for player based on input
+        val delta = Gdx.graphics.deltaTime          // time since last frame
+
+        if(btnLeft.isPressed) player.moveLeft(delta)
+        if(btnRight.isPressed) player.moveRight(delta)
+        if(btnJump.isPressed) player.jump()
+
+        player.update(delta)
+
+        // clear screen
+        Gdx.gl.glClearColor(0f, 0f, 0f ,1f)
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
+
+        // draw player
+        batch.begin()
+        batch.draw(playerTexture, player.x, player.y)
+        batch.end()
+
+        // update and draw UI elements
+        stage.act(delta)
+        stage.draw()
     }
 
     override fun dispose() {
-        image.disposeSafely()
-        batch.disposeSafely()
+        batch.dispose()
+        playerTexture.dispose()
+        stage.dispose()
     }
 }
