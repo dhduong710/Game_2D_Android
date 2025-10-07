@@ -5,6 +5,7 @@ import com.badlogic.gdx.ApplicationAdapter
 import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.scenes.scene2d.Stage
 import com.badlogic.gdx.scenes.scene2d.ui.ImageButton
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable
@@ -20,6 +21,12 @@ class DemonSlayerGame: ApplicationAdapter() {
     private lateinit var btnLeft: ImageButton
     private lateinit var btnRight: ImageButton
     private lateinit var btnJump: ImageButton
+
+    private val groundLevel = 100f
+
+    private lateinit var shapeRenderer: ShapeRenderer
+
+
 
     override fun create() {
         batch = SpriteBatch()
@@ -37,14 +44,16 @@ class DemonSlayerGame: ApplicationAdapter() {
         btnRight.setSize(100f, 100f)
         btnJump.setSize(100f, 100f)
 
-        btnLeft.setPosition(50f, 50f)
-        btnRight.setPosition(170f, 50f)
-        btnJump.setPosition(Gdx.graphics.width -150f, 50f)
+        btnLeft.setPosition(50f, 200f)
+        btnRight.setPosition(170f, 200f)
+        btnJump.setPosition(Gdx.graphics.width -150f, 200f)
 
 
         stage.addActor(btnLeft)
         stage.addActor(btnRight)
         stage.addActor(btnJump)
+
+        shapeRenderer = ShapeRenderer()
     }
 
     override fun render() {
@@ -56,7 +65,7 @@ class DemonSlayerGame: ApplicationAdapter() {
         if(btnRight.isPressed) player.moveRight(delta)
         if(btnJump.isPressed) player.jump()
 
-        player.update(delta)
+        player.update(delta, groundLevel)
 
         // clear screen
         Gdx.gl.glClearColor(0f, 0f, 0f ,1f)
@@ -70,11 +79,17 @@ class DemonSlayerGame: ApplicationAdapter() {
         // update and draw UI elements
         stage.act(delta)
         stage.draw()
+
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
+        shapeRenderer.setColor(0f, 0f, 0.5f, 1f)        // a : alpha (transparency)
+        shapeRenderer.rect(0f, 0f, Gdx.graphics.width.toFloat(), groundLevel)
+        shapeRenderer.end()
     }
 
     override fun dispose() {
         batch.dispose()
         playerTexture.dispose()
         stage.dispose()
+        shapeRenderer.dispose()
     }
 }

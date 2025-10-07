@@ -24,12 +24,12 @@ class Player {
         }
     }
 
-    fun update(delta: Float) {
+    fun update(delta: Float, groundY: Float) {
         velocityY += gravity * delta    // v = v0 + a * t
         y += velocityY * delta          // y = y0 + v * t
 
-        if(y <= 100f) {
-            y = 100f
+        if (y <= groundY) {
+            y = groundY
             velocityY = 0f
             isOnGround = true
         }
