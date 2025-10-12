@@ -1,95 +1,123 @@
 package com.hust.demonslayer
 
-import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.ApplicationAdapter
+import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.GL20
 import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.SpriteBatch
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.scenes.scene2d.Stage
 import com.badlogic.gdx.scenes.scene2d.ui.ImageButton
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable
 import com.badlogic.gdx.utils.viewport.ScreenViewport
 import com.hust.demonslayer.entities.Player
+import kotlin.math.abs
+import com.badlogic.gdx.graphics.g2d.TextureRegion
 
-class DemonSlayerGame: ApplicationAdapter() {
-    private lateinit var  batch: SpriteBatch        //combines multiple textures into a single command to the gpu
-    private lateinit var playerTexture: Texture
+class DemonSlayerGame : ApplicationAdapter() {
+    private lateinit var batch: SpriteBatch     // for drawing textures
+    private lateinit var stage: Stage           // for handling input and UI elements
     private lateinit var player: Player
 
-    private lateinit var stage: Stage               //contains UI objects or other actors
     private lateinit var btnLeft: ImageButton
     private lateinit var btnRight: ImageButton
     private lateinit var btnJump: ImageButton
+    private lateinit var btnAttack: ImageButton
+
+    private lateinit var enemyTexture: Texture
+    private var enemyX = 0f
+    private var enemyY = 100f
 
     private val groundLevel = 100f
-
-    private lateinit var shapeRenderer: ShapeRenderer
-
-
+    private lateinit var bgTexture: Texture
 
     override fun create() {
         batch = SpriteBatch()
-        playerTexture = Texture("player.png")
-        player = Player()
-
         stage = Stage(ScreenViewport(), batch)
         Gdx.input.inputProcessor = stage
 
-        btnLeft = ImageButton(TextureRegionDrawable(Texture("ui/btn_left.png")))
-        btnRight = ImageButton(TextureRegionDrawable(Texture("ui/btn_right.png")))
-        btnJump = ImageButton(TextureRegionDrawable(Texture("ui/btn_jump.png")))
+        player = Player()
+        bgTexture = Texture("background.png")
+        enemyTexture = Texture("enemy.png")
 
-        btnLeft.setSize(100f, 100f)
-        btnRight.setSize(100f, 100f)
-        btnJump.setSize(100f, 100f)
+        val leftTex = Texture("ui/btn_left.png")
+        val rightTex = Texture("ui/btn_right.png")
+        val jumpTex = Texture("ui/btn_jump.png")
+        val attackTex = Texture("ui/btn_attack.png")
 
-        btnLeft.setPosition(50f, 200f)
-        btnRight.setPosition(170f, 200f)
-        btnJump.setPosition(Gdx.graphics.width -150f, 200f)
+        btnLeft = ImageButton(TextureRegionDrawable(leftTex))
+        btnRight = ImageButton(TextureRegionDrawable(rightTex))
+        btnJump = ImageButton(TextureRegionDrawable(jumpTex))
+        btnAttack = ImageButton(TextureRegionDrawable(attackTex))
 
+        val smallBtnSize = 130f
+        val bigBtnSize = 160f
+
+        btnLeft.setSize(smallBtnSize, smallBtnSize)
+        btnRight.setSize(smallBtnSize, smallBtnSize)
+        btnJump.setSize(smallBtnSize, smallBtnSize)
+        btnAttack.setSize(bigBtnSize, bigBtnSize)
+
+        val baseY = 80f
+        val baseX = 80f
+
+        btnLeft.setPosition(baseX, baseY)
+        btnRight.setPosition(baseX + 200f, baseY)
+        btnJump.setPosition(baseX + 100f, baseY + 180f)
+
+        btnAttack.setPosition(Gdx.graphics.width - bigBtnSize - 100f, baseY + 50f)
 
         stage.addActor(btnLeft)
         stage.addActor(btnRight)
         stage.addActor(btnJump)
+        stage.addActor(btnAttack)
 
-        shapeRenderer = ShapeRenderer()
+        player.x = (Gdx.graphics.width / 2f) - 100f
+        player.y = groundLevel
+
+        enemyX = player.x + 300f
+        enemyY = groundLevel
     }
 
     override fun render() {
+        val delta = Gdx.graphics.deltaTime
 
-        // calculate new coordinates for player based on input
-        val delta = Gdx.graphics.deltaTime          // time since last frame
-
-        if(btnLeft.isPressed) player.moveLeft(delta)
-        if(btnRight.isPressed) player.moveRight(delta)
-        if(btnJump.isPressed) player.jump()
+        if (btnLeft.isPressed) player.moveLeft(delta)
+        if (btnRight.isPressed) player.moveRight(delta)
+        if (btnJump.isPressed) player.jump()
+        if (btnAttack.isPressed) player.attack()
 
         player.update(delta, groundLevel)
 
-        // clear screen
-        Gdx.gl.glClearColor(0f, 0f, 0f ,1f)
+        if (player.isAttacking && abs(player.x - enemyX) < 60f) {
+            Gdx.app.log("Combat", "hit!")
+        }
+
+        Gdx.gl.glClearColor(0f, 0f, 0f, 1f)         // Clear screen
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
 
-        // draw player
         batch.begin()
-        batch.draw(playerTexture, player.x, player.y)
+
+        batch.draw(bgTexture, 0f, 0f, Gdx.graphics.width.toFloat(), Gdx.graphics.height.toFloat())
+
+        val scale = 0.5f
+        val frame = player.getCurrentFrame()
+
+        batch.draw(frame, player.x, player.y, frame.regionWidth * scale, frame.regionHeight * scale)
+
+        val enemyRegion = TextureRegion(enemyTexture)
+        batch.draw(enemyRegion, enemyX, enemyY, enemyRegion.regionWidth * scale, enemyRegion.regionHeight * scale)
+
         batch.end()
 
-        // update and draw UI elements
         stage.act(delta)
         stage.draw()
-
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled)
-        shapeRenderer.setColor(0f, 0f, 0.5f, 1f)        // a : alpha (transparency)
-        shapeRenderer.rect(0f, 0f, Gdx.graphics.width.toFloat(), groundLevel)
-        shapeRenderer.end()
     }
 
     override fun dispose() {
         batch.dispose()
-        playerTexture.dispose()
         stage.dispose()
-        shapeRenderer.dispose()
+        player.dispose()
+        enemyTexture.dispose()
+        bgTexture.dispose()
     }
 }
