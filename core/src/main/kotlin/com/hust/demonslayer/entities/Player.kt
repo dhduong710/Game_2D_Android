@@ -14,18 +14,22 @@ class Player {
     private var velocityY = 0f
     private var isOnGround = true
 
-    // Animation
+    var maxHp = 100
+    var currentHp = 100
+
     private val idleTexture = Texture("player_idle.png")
     private val attack1 = Texture("player_attack1.png")
     private val attack2 = Texture("player_attack2.png")
 
     private val idleRegion = TextureRegion(idleTexture)
-    private val attackAnimation = Animation(0.15f, TextureRegion(attack1), TextureRegion(attack2))  // 0.15f is the frame duration
-    private var stateTime = 0f          // Tracks the elapsed time of the animation
+    private val attackAnimation = Animation(0.15f, TextureRegion(attack1), TextureRegion(attack2))
+    private var stateTime = 0f
 
     var isAttacking = false
     private var attackTime = 0f
     private val attackDuration = 0.3f
+
+    var hasDealtDamageThisAttack = false            // Flag to track if damage has been dealt this attack
 
     fun moveLeft(delta: Float) {
         if (!isAttacking) x -= speed * delta
@@ -47,13 +51,14 @@ class Player {
             isAttacking = true
             attackTime = 0f
             stateTime = 0f
+            hasDealtDamageThisAttack = false
             Gdx.app.log("Player", "Attack start!")
         }
     }
 
     fun update(delta: Float, groundY: Float) {
-        velocityY += gravity * delta                // v = v0 + a * t
-        y += velocityY * delta                      // y = y0 + v * t
+        velocityY += gravity * delta
+        y += velocityY * delta
 
         if (y <= groundY) {
             y = groundY
@@ -78,6 +83,14 @@ class Player {
         } else {
             idleRegion
         }
+    }
+
+    fun takeDamage(damage: Int) {
+        currentHp -= damage
+        if (currentHp < 0) {
+            currentHp = 0
+        }
+        Gdx.app.log("Player", "Player took $damage damage, current HP: $currentHp")
     }
 
     fun dispose() {
