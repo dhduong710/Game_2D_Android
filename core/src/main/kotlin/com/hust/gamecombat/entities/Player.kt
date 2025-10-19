@@ -5,7 +5,7 @@ import com.badlogic.gdx.Gdx
 class Player(characterID: CharacterID) : BaseCharacter(characterID) {
     override fun takeDamage(damage: Int) {
         val hpBefore = currentHp
-        super.takeDamage(damage) /
+        super.takeDamage(damage)
 
         if (state == State.BLOCK) {
             Gdx.app.log("Player", "Player blocked attack!")

@@ -1,8 +1,8 @@
-package com.hust.demonslayer
+package com.hust.gamecombat
 
 import com.badlogic.gdx.Game
 
-class DemonSlayerGame : Game() {
+class GameCombat : Game() {
     override fun create() {
 
         setScreen(MenuScreen(this))

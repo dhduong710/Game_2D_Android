@@ -9,7 +9,7 @@ apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 
 android {
-  namespace "com.hust.demonslayer"
+  namespace "com.hust.gamecombat"
   compileSdk 35
   sourceSets {
     main {
@@ -50,7 +50,7 @@ android {
   }
 
   kotlin.compilerOptions.jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8)
-  
+
 }
 
 repositories {
