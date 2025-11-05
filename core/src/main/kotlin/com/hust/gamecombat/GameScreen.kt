@@ -280,10 +280,10 @@ class GameScreen(
         val hitRange = 250f
         val skillRange = 270f
 
-        val damage = 10
-        val skill1Dmg = 15
-        val skill2Dmg = 20
-        val skill3Dmg = 25
+        val damage = 5
+        val skill1Dmg = 10
+        val skill2Dmg = 15
+        val skill3Dmg = 20
 
         if (playerCanDealDamage &&
             player.isFacingRight == (enemy.x > player.x))

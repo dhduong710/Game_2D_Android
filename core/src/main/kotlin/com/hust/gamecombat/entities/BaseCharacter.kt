@@ -27,7 +27,7 @@ abstract class BaseCharacter(characterID: CharacterID) {
 
     var maxMp = 100
     var currentMp = 100
-    var mpRegenRate = 2f
+    var mpRegenRate = 5f
 
     private var mpRegenAccumulator = 0f
 
@@ -212,7 +212,7 @@ abstract class BaseCharacter(characterID: CharacterID) {
 
         if (isOnGround && !isBusy()) {
 
-            if (currentMp == 100) {
+            if (currentMp == 50) {
 
                 state = State.BLOCK
 
