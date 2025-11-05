@@ -67,10 +67,7 @@ assets/
 
 ## How to Run the Project
 
-1. Clone this repository:
-   ```bash
-   git clone https://github.com/yourusername/GameCombat.git
-   ```
+1. Clone this repository.
 
 2. Open the project using **Android Studio**.
 
