@@ -258,8 +258,14 @@ class GameScreen(
         }
         playerLastState = player.state
 
+
         if (enemy.state != enemyLastState) {
-            if (enemy.state == BaseCharacter.State.ATTACK_NORMAL) {
+
+            if (enemy.state == BaseCharacter.State.ATTACK_NORMAL ||
+                enemy.state == BaseCharacter.State.SKILL_1 ||
+                enemy.state == BaseCharacter.State.SKILL_2 ||
+                enemy.state == BaseCharacter.State.SKILL_3)
+            {
                 enemyCanDealDamage = true
             }
         }
@@ -320,12 +326,41 @@ class GameScreen(
 
 
         if (enemyCanDealDamage &&
-            enemy.state == BaseCharacter.State.ATTACK_NORMAL &&
-            distance < hitRange &&
-            enemy.isFacingRight == (player.x > enemy.x)
-        ) {
-            player.takeDamage(damage)
-            enemyCanDealDamage = false
+            enemy.isFacingRight == (player.x > enemy.x))
+        {
+            var dealtDamage = false
+
+            when (enemy.state) {
+                BaseCharacter.State.ATTACK_NORMAL -> {
+                    if (distance < hitRange) {
+                        player.takeDamage(damage)
+                        dealtDamage = true
+                    }
+                }
+                BaseCharacter.State.SKILL_1 -> {
+                    if (distance < skillRange) {
+                        player.takeDamage(skill1Dmg)
+                        dealtDamage = true
+                    }
+                }
+                BaseCharacter.State.SKILL_2 -> {
+                    if (distance < skillRange) {
+                        player.takeDamage(skill2Dmg)
+                        dealtDamage = true
+                    }
+                }
+                BaseCharacter.State.SKILL_3 -> {
+                    if (distance < skillRange) {
+                        player.takeDamage(skill3Dmg)
+                        dealtDamage = true
+                    }
+                }
+                else -> {}
+            }
+
+            if (dealtDamage) {
+                enemyCanDealDamage = false
+            }
         }
     }
 
@@ -388,7 +423,9 @@ class GameScreen(
         val hpRatio = character.currentHp.toFloat() / character.maxHp.toFloat()
         batch.draw(hpBarFill, x, y, width * hpRatio, height)
         batch.draw(hpBarFrame, x, y, width, height)
-        batch.draw(mpBarFill, x, y - 30f, width, 70f)
+
+        val mpRatio = character.currentMp.toFloat() / character.maxMp.toFloat()
+        batch.draw(mpBarFill, x, y - 30f, width * mpRatio, 70f)
     }
 
     private fun drawResultScreen() {

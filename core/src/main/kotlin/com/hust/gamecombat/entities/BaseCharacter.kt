@@ -26,6 +26,16 @@ abstract class BaseCharacter(characterID: CharacterID) {
     var maxHp = 100
     var currentHp = 100
 
+    var maxMp = 100
+    var currentMp = 100
+    var mpRegenRate = 2f
+
+    private var mpRegenAccumulator = 0f
+
+    protected val skill1Cost = 15
+    protected val skill2Cost = 25
+    protected val skill3Cost = 40
+
     private var actionTimer = 0f
     private val hitStunDuration = 0.3f
     private val attackDuration = 0.4f
@@ -113,6 +123,18 @@ abstract class BaseCharacter(characterID: CharacterID) {
             isOnGround = false
         }
 
+        if (currentMp < maxMp) {
+            mpRegenAccumulator += mpRegenRate * delta
+
+            if (mpRegenAccumulator >= 1f) {
+                val amountToRegen = mpRegenAccumulator.toInt()
+                currentMp += amountToRegen
+                mpRegenAccumulator -= amountToRegen
+
+                if (currentMp > maxMp) currentMp = maxMp
+            }
+        }
+
         if (actionTimer > 0) {
             actionTimer -= delta
             if (actionTimer <= 0) {
@@ -184,9 +206,20 @@ abstract class BaseCharacter(characterID: CharacterID) {
         }
     }
 
+
     open fun block() {
+
+        if (state == State.BLOCK) return
+
         if (isOnGround && !isBusy()) {
-            state = State.BLOCK
+
+            if (currentMp == 100) {
+
+                state = State.BLOCK
+
+                currentMp = 0
+            }
+
         }
     }
 
@@ -202,24 +235,34 @@ abstract class BaseCharacter(characterID: CharacterID) {
             actionTimer = attackDuration
         }
     }
+
     open fun useSkill1() {
         if (isOnGround && !isBusy() && state != State.BLOCK) {
-            state = State.SKILL_1
-            actionTimer = 0.5f
+            if (currentMp >= skill1Cost) {
+                currentMp -= skill1Cost
+                state = State.SKILL_1
+                actionTimer = 0.5f
+            }
         }
     }
 
     open fun useSkill2() {
         if (isOnGround && !isBusy() && state != State.BLOCK) {
-            state = State.SKILL_2
-            actionTimer = 0.7f
+            if (currentMp >= skill2Cost) {
+                currentMp -= skill2Cost
+                state = State.SKILL_2
+                actionTimer = 0.7f
+            }
         }
     }
 
     open fun useSkill3() {
         if (isOnGround && !isBusy() && state != State.BLOCK) {
-            state = State.SKILL_3
-            actionTimer = 1.2f
+            if (currentMp >= skill3Cost) {
+                currentMp -= skill3Cost
+                state = State.SKILL_3
+                actionTimer = 1.2f
+            }
         }
     }
 

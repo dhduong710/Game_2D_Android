@@ -3,6 +3,8 @@ package com.hust.gamecombat.entities
 import com.badlogic.gdx.Gdx
 import kotlin.math.abs
 
+import kotlin.random.Random
+
 class Enemy(
     characterID: CharacterID,
     startX: Float,
@@ -36,7 +38,17 @@ class Enemy(
             if (distanceX < 200f) {
 
                 isFacingRight = (player.x > this.x)
-                attackNormal()
+
+                val attackChoice = Random.nextInt(4)
+
+                when (attackChoice) {
+                    0 -> attackNormal()
+                    1 -> useSkill1()
+                    2 -> useSkill2()
+                    3 -> useSkill3()
+                }
+
+
             } else {
 
                 if (player.x > this.x) {
@@ -44,6 +56,7 @@ class Enemy(
                 } else {
                     moveLeft(delta)
                 }
+
             }
         }
     }
