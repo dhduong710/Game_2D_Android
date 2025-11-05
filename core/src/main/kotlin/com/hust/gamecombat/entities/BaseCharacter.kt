@@ -212,7 +212,7 @@ abstract class BaseCharacter(characterID: CharacterID) {
 
         if (isOnGround && !isBusy()) {
 
-            if (currentMp == 50) {
+            if (currentMp >= 50) {
 
                 state = State.BLOCK
 
