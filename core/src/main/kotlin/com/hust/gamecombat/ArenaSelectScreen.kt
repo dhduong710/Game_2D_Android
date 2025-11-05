@@ -12,33 +12,30 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch
 import com.badlogic.gdx.scenes.scene2d.InputEvent
 import com.badlogic.gdx.scenes.scene2d.InputListener
 import com.badlogic.gdx.scenes.scene2d.Stage
-import com.badlogic.gdx.scenes.scene2d.ui.Container
-import com.badlogic.gdx.scenes.scene2d.ui.Image
 import com.badlogic.gdx.scenes.scene2d.ui.ImageButton
 import com.badlogic.gdx.scenes.scene2d.ui.Label
-import com.badlogic.gdx.scenes.scene2d.ui.Stack
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable
 import com.badlogic.gdx.utils.Align
-import com.badlogic.gdx.utils.Scaling
 import com.badlogic.gdx.utils.viewport.ScreenViewport
 import com.hust.gamecombat.entities.CharacterID
 import kotlin.math.max
-import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
 
-abstract class ClickListener : InputListener() {
-    override fun touchDown(event: InputEvent?, x: Float, y: Float, pointer: Int, button: Int): Boolean {
-        return true
-    }
-    override fun touchUp(event: InputEvent?, x: Float, y: Float, pointer: Int, button: Int) {
-        clicked(event, x, y)
-    }
-    abstract fun clicked(event: InputEvent?, x: Float, y: Float)
+
+enum class ArenaID(val assetPath: String, val displayName: String) {
+    KONOHA("arenas/konoha.png", "Konoha"),
+    THOUSANDSUNNY("arenas/thousandsunny.png", "Thousand Sunny");
 }
 
-class CharacterSelectScreen(private val game: Game) : Screen {
+
+
+class ArenaSelectScreen(
+    private val game: Game,
+    private val p1Choice: CharacterID,
+    private val p2Choice: CharacterID
+) : Screen {
 
     private val stage = Stage(ScreenViewport())
-    private val batch = SpriteBatch()       // draw texture, image, etc.
+    private val batch = SpriteBatch()
 
     private enum class SelectionState { SELECTING_P1, SELECTING_P2, READY }
     private var currentState = SelectionState.SELECTING_P1
@@ -57,11 +54,11 @@ class CharacterSelectScreen(private val game: Game) : Screen {
 
     private val buttonTextures = mutableListOf<Texture>()
 
-    private val availableCharacters = CharacterID.values()
-    private var p1Choice: CharacterID? = null
-    private var p2Choice: CharacterID? = null
+    private var arenaChoice: ArenaID? = null
+    private val availableArenas = ArenaID.values()
+    private val portraitTextures = mutableMapOf<ArenaID, Texture>()
 
-    private val cols = 2
+    private val cols = availableArenas.size
     private val rows = 1
     private val portraitSize = 200f
     private val portraitSpacing = 50f
@@ -70,39 +67,29 @@ class CharacterSelectScreen(private val game: Game) : Screen {
     private val gridStartY: Float
 
     private val titleLabel: Label
-    private val p1Label: Label
-    private val p2Label: Label
-    private val p1NameLabel: Label
-    private val p2NameLabel: Label
-
-    private val portraitTextures = mutableMapOf<CharacterID, Texture>()
+    private val arenaNameLabel: Label
 
     private val emptyTexture: Texture
-    private lateinit var p1PortraitImage: Image
-    private lateinit var p2PortraitImage: Image
 
 
     init {
         val screenWidth = Gdx.graphics.width.toFloat()
         val screenHeight = Gdx.graphics.height.toFloat()
 
-        // Pre-load all character portraits into a map for quick access.
-        availableCharacters.forEach { charID ->
-            val tex = Texture(Gdx.files.internal("${charID.assetPath}/portrait.png"))
-            portraitTextures[charID] = tex
+        availableArenas.forEach { arenaID ->
+            val tex = Texture(Gdx.files.internal(arenaID.assetPath))
+            portraitTextures[arenaID] = tex
         }
 
-        // Create a 1x1 transparent texture to use as a placeholder for portraits.
         val pixmap = Pixmap(1, 1, Pixmap.Format.RGBA8888)
         pixmap.setColor(0f, 0f, 0f, 0f)
         pixmap.fill()
         emptyTexture = Texture(pixmap)
         pixmap.dispose()
 
-        // Set the texture filter to prevent the font from looking blurry.
         font.region.texture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest)
 
-        titleLabel = Label("CHARACTER SELECTION", Label.LabelStyle(font, Color.WHITE))
+        titleLabel = Label("ARENA SELECTION", Label.LabelStyle(font, Color.WHITE))
         titleLabel.setFontScale(4.0f)
         titleLabel.setSize(screenWidth, 50f)
         titleLabel.setPosition(0f, screenHeight - 100f)
@@ -114,77 +101,11 @@ class CharacterSelectScreen(private val game: Game) : Screen {
         gridStartX = (screenWidth - gridTotalWidth) / 2f
         gridStartY = screenHeight / 2f
 
-        val p1NameX = gridStartX + portraitSize / 2f
-        val p2NameX = gridStartX + portraitSize + portraitSpacing + portraitSize / 2f
-        val nameY = gridStartY - 50f
-
-        p1NameLabel = Label(availableCharacters[0].displayName, Label.LabelStyle(font, Color.WHITE))
-        p1NameLabel.setFontScale(2.5f)
-        p1NameLabel.setAlignment(Align.center)
-        p1NameLabel.setPosition(p1NameX, nameY, Align.center)
-        stage.addActor(p1NameLabel)
-
-        p2NameLabel = Label(availableCharacters[1].displayName, Label.LabelStyle(font, Color.WHITE))
-        p2NameLabel.setFontScale(2.5f)
-        p2NameLabel.setAlignment(Align.center)
-        p2NameLabel.setPosition(p2NameX, nameY, Align.center)
-        stage.addActor(p2NameLabel)
-
-        val selectedPortraitSize = 100f
-        val selectedY = 120f
-        val p1X = screenWidth * 0.3f
-        val p2X = screenWidth * 0.7f
-
-        p1Label = Label("PLAYER 1", Label.LabelStyle(font, Color.CYAN))
-        p1Label.setFontScale(2.0f)
-        p1Label.setSize(selectedPortraitSize, 50f)
-        p1Label.setAlignment(Align.center)
-        p1Label.setPosition(p1X, selectedY + selectedPortraitSize + 20f, Align.center)
-        stage.addActor(p1Label)
-
-        // A Stack is used to place a colored frame on top of the character image.
-        val p1Stack = Stack()
-        p1Stack.setSize(selectedPortraitSize, selectedPortraitSize)
-        p1Stack.setPosition(p1X, selectedY, Align.center)
-
-        p1PortraitImage = Image(emptyTexture)
-        p1PortraitImage.setScaling(Scaling.fit)
-
-        val p1ImageContainer = Container(p1PortraitImage)
-        p1ImageContainer.pad(20f)
-        p1ImageContainer.fill(true)
-        p1Stack.add(p1ImageContainer)
-
-        val p1Frame = Image(selectorTexture)
-        p1Frame.color = Color.CYAN
-        p1Stack.add(p1Frame)
-
-        stage.addActor(p1Stack)
-
-        p2Label = Label("PLAYER 2", Label.LabelStyle(font, Color.RED))
-        p2Label.setFontScale(2.0f)
-        p2Label.setSize(selectedPortraitSize, 50f)
-        p2Label.setAlignment(Align.center)
-        p2Label.setPosition(p2X, selectedY + selectedPortraitSize + 20f, Align.center)
-        stage.addActor(p2Label)
-
-        val p2Stack = Stack()
-        p2Stack.setSize(selectedPortraitSize, selectedPortraitSize)
-        p2Stack.setPosition(p2X, selectedY, Align.center)
-
-        p2PortraitImage = Image(emptyTexture)
-        p2PortraitImage.setScaling(Scaling.fit)
-
-        val p2ImageContainer = Container(p2PortraitImage)
-        p2ImageContainer.pad(20f)
-        p2ImageContainer.fill(true)
-        p2Stack.add(p2ImageContainer)
-
-        val p2Frame = Image(selectorTexture)
-        p2Frame.color = Color.RED
-        p2Stack.add(p2Frame)
-
-        stage.addActor(p2Stack)
+        arenaNameLabel = Label(availableArenas[0].displayName, Label.LabelStyle(font, Color.WHITE))
+        arenaNameLabel.setFontScale(2.5f)
+        arenaNameLabel.setAlignment(Align.center)
+        arenaNameLabel.setPosition(screenWidth / 2f, gridStartY - 50f, Align.center)
+        stage.addActor(arenaNameLabel)
 
         btnFight = ImageButton(TextureRegionDrawable(fightButtonTexture))
         btnFight.setSize(800f, 300f)
@@ -240,9 +161,9 @@ class CharacterSelectScreen(private val game: Game) : Screen {
         btnRight.setPosition(dpadBaseX + dpadSize * 2 - 50f, dpadBaseY + dpadSize/2)
         stage.addActor(btnRight)
 
-        val mainBtnSize = 240f // Copy từ GameScreen.kt
+        val mainBtnSize = 240f
         val actionBaseX = Gdx.graphics.width - mainBtnSize - 50f
-        val actionBaseY = 50f // Copy từ GameScreen.kt
+        val actionBaseY = 50f
 
         btnAttack = ImageButton(TextureRegionDrawable(attackTex))
         btnAttack.setSize(mainBtnSize, mainBtnSize)
@@ -260,7 +181,6 @@ class CharacterSelectScreen(private val game: Game) : Screen {
             }
         }
         btnLeft.addListener(leftDownListener)
-        btnDown.addListener(leftDownListener)
 
         val rightUpListener = object : InputListener() {
             override fun touchDown(event: InputEvent?, x: Float, y: Float, pointer: Int, button: Int): Boolean {
@@ -268,7 +188,6 @@ class CharacterSelectScreen(private val game: Game) : Screen {
             }
         }
         btnRight.addListener(rightUpListener)
-        btnUp.addListener(rightUpListener)
 
 
         btnAttack.addListener(object : InputListener() {
@@ -284,50 +203,39 @@ class CharacterSelectScreen(private val game: Game) : Screen {
             return
         }
 
-
         when (direction) {
-            Direction.LEFT -> cursorX = (cursorX - 1 + cols) % cols     // (0 - 1 + 5) % 5 = 4
-            Direction.RIGHT -> cursorX = (cursorX + 1) % cols           // (4 + 1) % 5 = 0
+            Direction.LEFT -> cursorX = (cursorX - 1 + cols) % cols
+            Direction.RIGHT -> cursorX = (cursorX + 1) % cols
+
             Direction.SELECT -> {
 
                 val index = cursorX
-                if (index >= availableCharacters.size) return
+                if (index >= availableArenas.size) return
+                arenaChoice = availableArenas[index]
 
-                val selectedChar = availableCharacters[index]
+                currentState = SelectionState.READY
 
-                if (currentState == SelectionState.SELECTING_P1) {
-                    p1Choice = selectedChar
-
-                    p1PortraitImage.drawable = TextureRegionDrawable(portraitTextures[selectedChar])
-                    currentState = SelectionState.SELECTING_P2
-                    cursorX = (cursorX + 1) % cols
-                } else {
-                    p2Choice = selectedChar
-
-                    p2PortraitImage.drawable = TextureRegionDrawable(portraitTextures[selectedChar])
-                    currentState = SelectionState.READY
-
-                    btnUp.isVisible = false
-                    btnDown.isVisible = false
-                    btnLeft.isVisible = false
-                    btnRight.isVisible = false
-                    btnAttack.isVisible = false
-                    btnFight.isVisible = true
-                }
+                btnUp.isVisible = false
+                btnDown.isVisible = false
+                btnLeft.isVisible = false
+                btnRight.isVisible = false
+                btnAttack.isVisible = false
+                btnFight.isVisible = true
             }
+            else -> {}
+        }
 
-            else -> { }
+        if (currentState != SelectionState.READY) {
+            arenaNameLabel.setText(availableArenas[cursorX].displayName)
         }
     }
 
-    // Trong file: CharacterSelectScreen.kt
-
     private fun startGame() {
-        if (p1Choice == null || p2Choice == null) return
+        if (arenaChoice == null) return
 
-        Gdx.app.log("Select", "To Arena Select! P1: $p1Choice vs P2: $p2Choice")
+        Gdx.app.log("Select", "Start Game! P1: $p1Choice vs P2: $p2Choice on Arena: $arenaChoice")
 
-        game.screen = ArenaSelectScreen(game, p1Choice!!, p2Choice!!)
+        game.screen = GameScreen(game, p1Choice, p2Choice, arenaChoice!!)
 
         dispose()
     }
@@ -336,37 +244,28 @@ class CharacterSelectScreen(private val game: Game) : Screen {
         Gdx.gl.glClearColor(0.1f, 0.1f, 0.1f, 1f)
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
 
-        batch.projectionMatrix = stage.camera.combined  // set camera for batch
+        batch.projectionMatrix = stage.camera.combined
         batch.begin()
 
         batch.draw(backgroundTexture, 0f, 0f, Gdx.graphics.width.toFloat(), Gdx.graphics.height.toFloat())
 
-        var charIndex = 0
-        for (x in 0 until cols) {
-            if (charIndex < availableCharacters.size) {
-                val charID = availableCharacters[charIndex]
-                val tex = portraitTextures[charID]!!
-
-                val posX = gridStartX + x * (portraitSize + portraitSpacing)
-
-                batch.draw(tex, posX, gridStartY, portraitSize, portraitSize)
-                batch.color = Color.WHITE
-            }
-            charIndex++
+        val mapToDraw: ArenaID? = if (currentState == SelectionState.READY) {
+            arenaChoice
+        } else {
+            availableArenas[cursorX]
         }
 
-        if (currentState != SelectionState.READY) {
-            val selectorPadding = 15f
-            val extraZoom = 50f
-            val selectorSize = portraitSize + (selectorPadding * 2) + extraZoom
-            val totalPadding = selectorPadding + (extraZoom / 2f)
-            val posX = gridStartX + cursorX * (portraitSize + portraitSpacing) - totalPadding
-            val posY = gridStartY - totalPadding
+        if (mapToDraw != null) {
+            val tex = portraitTextures[mapToDraw]!!
 
-            batch.color = if (currentState == SelectionState.SELECTING_P1) Color.CYAN else Color.RED
-            batch.draw(selectorTexture, posX, posY, selectorSize, selectorSize)
-            batch.color = Color.WHITE
+            val displayWidth = Gdx.graphics.width * 0.5f
+            val displayHeight = displayWidth * (tex.height.toFloat() / tex.width.toFloat())
+            val posX = (Gdx.graphics.width - displayWidth) / 2f
+            val posY = (Gdx.graphics.height - displayHeight) / 2f + 50f
+
+            batch.draw(tex, posX, posY, displayWidth, displayHeight)
         }
+
 
         batch.end()
 

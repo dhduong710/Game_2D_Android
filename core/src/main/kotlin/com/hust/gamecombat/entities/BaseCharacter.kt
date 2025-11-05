@@ -20,7 +20,7 @@ abstract class BaseCharacter(characterID: CharacterID) {
     var velocityY = 0f
     val gravity = -900f
     var jumpForce = 400f
-    var speed = 200f
+    open var speed = 200f
     var isOnGround = true
 
     var maxHp = 100

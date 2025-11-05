@@ -23,7 +23,8 @@ import kotlin.math.abs
 class GameScreen(
     private val game: Game,
     private val p1ID: CharacterID,
-    private val p2ID: CharacterID
+    private val p2ID: CharacterID,
+    private val arenaID: ArenaID
 ) : Screen {
 
     private val batch: SpriteBatch = SpriteBatch()
@@ -64,7 +65,7 @@ class GameScreen(
     override fun show() {
 
         Gdx.input.inputProcessor = stage
-        arenaTexture = Texture("arenas/konoha.png")
+        arenaTexture = Texture(arenaID.assetPath)
         font = BitmapFont(Gdx.files.internal("fonts/main_font.fnt"))
         hpBarFrame = Texture("ui/hud/hp_bar_frame.png")
         hpBarFill = Texture("ui/hud/hp_bar_fill.png")
@@ -217,6 +218,7 @@ class GameScreen(
         if (btnSkill2.isPressed) player.useSkill2()
         if (btnSkill1.isPressed) player.useSkill3()
     }
+
     private fun updateGame(delta: Float) {
         player.update(delta, groundY)
         enemy.update(delta, groundY)

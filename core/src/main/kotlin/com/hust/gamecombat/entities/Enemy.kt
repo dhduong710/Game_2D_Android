@@ -12,6 +12,8 @@ class Enemy(
     private var aiActionTimer = 0f
     private val aiActionCooldown = 1.0f
 
+    override var speed = 2000f
+
     init {
         this.x = startX
         this.y = startY
@@ -38,9 +40,9 @@ class Enemy(
             } else if (distanceX < 400f) {
 
                 if (player.x > this.x) {
-                    moveRight(delta * 10)           // 10 is speed of enemy
+                    moveRight(delta)
                 } else {
-                    moveLeft(delta * 10)
+                    moveLeft(delta)
                 }
             } else {
 
