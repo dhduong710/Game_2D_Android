@@ -31,6 +31,11 @@ class GameScreen(
     private val stage: Stage = Stage(ScreenViewport(), batch)
     private lateinit var player: Player
     private lateinit var enemy: Enemy
+
+    private var playerLastState: BaseCharacter.State = BaseCharacter.State.IDLE
+
+    private var enemyLastState: BaseCharacter.State = BaseCharacter.State.IDLE
+
     private val groundY = 120f
     private val characterScale = 0.5f
     private lateinit var arenaTexture: Texture
@@ -204,6 +209,7 @@ class GameScreen(
         stage.draw()
     }
 
+
     private fun handleInput(delta: Float) {
         if (btnLeft.isPressed) player.moveLeft(delta)
         else if (btnRight.isPressed) player.moveRight(delta)
@@ -213,10 +219,9 @@ class GameScreen(
         else player.stopBlocking()
 
         if (btnUp.isPressed) player.jump()
-        if (btnAttack.isPressed) {
-            player.attackNormal()
-            playerCanDealDamage = true
-        }
+
+        if (btnAttack.isPressed) player.attackNormal()
+
 
         if (btnSkill3.isPressed) player.useSkill1()
         if (btnSkill2.isPressed) player.useSkill2()
@@ -235,30 +240,87 @@ class GameScreen(
     }
 
     private fun updateGame(delta: Float) {
+
         player.update(delta, groundY)
         enemy.update(delta, groundY)
         enemy.updateAI(delta, player)
-        if (player.state != BaseCharacter.State.ATTACK_NORMAL) playerCanDealDamage = false
-        if (enemy.state != BaseCharacter.State.ATTACK_NORMAL) enemyCanDealDamage = false
+
+
+        if (player.state != playerLastState) {
+
+            if (player.state == BaseCharacter.State.ATTACK_NORMAL ||
+                player.state == BaseCharacter.State.SKILL_1 ||
+                player.state == BaseCharacter.State.SKILL_2 ||
+                player.state == BaseCharacter.State.SKILL_3)
+            {
+                playerCanDealDamage = true
+            }
+        }
+        playerLastState = player.state
+
+        if (enemy.state != enemyLastState) {
+            if (enemy.state == BaseCharacter.State.ATTACK_NORMAL) {
+                enemyCanDealDamage = true
+            }
+        }
+        enemyLastState = enemy.state
 
         clampCharacterPositions()
     }
+
     private fun checkCombat() {
         val distance = abs(player.x - enemy.x)
-        val hitRange = 80f
-        val damage = 10
 
-        if (player.state == BaseCharacter.State.ATTACK_NORMAL &&
-            playerCanDealDamage &&
-            distance < hitRange &&
-            player.isFacingRight == (enemy.x > player.x)
-        ) {
-            enemy.takeDamage(damage)
-            playerCanDealDamage = false
+        val hitRange = 200f
+        val skillRange = 220f
+
+        val damage = 10
+        val skill1Dmg = 15
+        val skill2Dmg = 20
+        val skill3Dmg = 25
+
+        if (playerCanDealDamage &&
+            player.isFacingRight == (enemy.x > player.x))
+        {
+            var dealtDamage = false
+
+            when (player.state) {
+                BaseCharacter.State.ATTACK_NORMAL -> {
+                    if (distance < hitRange) {
+                        enemy.takeDamage(damage)
+                        dealtDamage = true
+                    }
+                }
+                BaseCharacter.State.SKILL_1 -> {
+                    if (distance < skillRange) {
+                        enemy.takeDamage(skill1Dmg)
+                        dealtDamage = true
+                    }
+                }
+                BaseCharacter.State.SKILL_2 -> {
+                    if (distance < skillRange) {
+                        enemy.takeDamage(skill2Dmg)
+                        dealtDamage = true
+                    }
+                }
+                BaseCharacter.State.SKILL_3 -> {
+                    if (distance < skillRange) {
+                        enemy.takeDamage(skill3Dmg)
+                        dealtDamage = true
+                    }
+                }
+                else -> {}
+            }
+
+
+            if (dealtDamage) {
+                playerCanDealDamage = false
+            }
         }
 
-        if (enemy.state == BaseCharacter.State.ATTACK_NORMAL &&
-            enemyCanDealDamage &&
+
+        if (enemyCanDealDamage &&
+            enemy.state == BaseCharacter.State.ATTACK_NORMAL &&
             distance < hitRange &&
             enemy.isFacingRight == (player.x > enemy.x)
         ) {
@@ -266,6 +328,7 @@ class GameScreen(
             enemyCanDealDamage = false
         }
     }
+
     private fun checkWinLose() {
         if (gameState != GameState.RUNNING) return
         if (!player.isAlive) gameState = GameState.PLAYER_LOSE
