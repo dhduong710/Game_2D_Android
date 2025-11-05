@@ -176,6 +176,10 @@ class GameScreen(
             if (gameTimer < 0) gameTimer = 0f
             timerLabel.setText(gameTimer.toInt().toString())
 
+            if (gameTimer <= 0f) {
+                checkWinLoseByTime()
+            }
+
             handleInput(delta)
             updateGame(delta)
             checkCombat()
@@ -219,12 +223,25 @@ class GameScreen(
         if (btnSkill1.isPressed) player.useSkill3()
     }
 
+    private fun clampCharacterPositions() {
+        val screenWidth = Gdx.graphics.width.toFloat()
+
+        val playerWidth = player.getCurrentFrame().regionWidth * characterScale
+
+        player.x = player.x.coerceIn(0f, screenWidth - playerWidth)
+
+        val enemyWidth = enemy.getCurrentFrame().regionWidth * characterScale
+        enemy.x = enemy.x.coerceIn(0f, screenWidth - enemyWidth)
+    }
+
     private fun updateGame(delta: Float) {
         player.update(delta, groundY)
         enemy.update(delta, groundY)
         enemy.updateAI(delta, player)
         if (player.state != BaseCharacter.State.ATTACK_NORMAL) playerCanDealDamage = false
         if (enemy.state != BaseCharacter.State.ATTACK_NORMAL) enemyCanDealDamage = false
+
+        clampCharacterPositions()
     }
     private fun checkCombat() {
         val distance = abs(player.x - enemy.x)
@@ -253,6 +270,19 @@ class GameScreen(
         if (gameState != GameState.RUNNING) return
         if (!player.isAlive) gameState = GameState.PLAYER_LOSE
         else if (!enemy.isAlive) gameState = GameState.PLAYER_WIN
+    }
+
+    private fun checkWinLoseByTime() {
+
+        if (gameState != GameState.RUNNING) return
+
+        if (player.currentHp > enemy.currentHp) {
+            gameState = GameState.PLAYER_WIN
+            enemy.isAlive = false
+        } else {
+            gameState = GameState.PLAYER_LOSE
+            player.isAlive = false
+        }
     }
     private fun drawWorld() {
         batch.draw(arenaTexture, 0f, 0f, Gdx.graphics.width.toFloat(), Gdx.graphics.height.toFloat())
