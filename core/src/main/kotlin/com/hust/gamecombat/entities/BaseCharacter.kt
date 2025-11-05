@@ -9,8 +9,7 @@ abstract class BaseCharacter(characterID: CharacterID) {
         IDLE, RUN, JUMP, BLOCK, HIT,
         ATTACK_NORMAL, SKILL_1, SKILL_2, SKILL_3
     }
-    var state = State.IDLE
-        private set             // Public getter, private setter
+    internal var state = State.IDLE
 
     var isFacingRight = true
     var isAlive = true
@@ -36,9 +35,9 @@ abstract class BaseCharacter(characterID: CharacterID) {
     protected val skill2Cost = 25
     protected val skill3Cost = 40
 
-    private var actionTimer = 0f
+    protected var actionTimer = 0f
     private val hitStunDuration = 0.3f
-    private val attackDuration = 0.4f
+    protected val attackDuration = 0.4f
 
     protected val portraitTex: Texture
     protected val idleTex: Texture

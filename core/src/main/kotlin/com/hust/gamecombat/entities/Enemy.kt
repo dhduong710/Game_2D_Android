@@ -14,7 +14,7 @@ class Enemy(
     private var aiActionTimer = 0f
     private val aiActionCooldown = 1.0f
 
-    override var speed = 4000f
+    override var speed = 2000f
 
     init {
         this.x = startX
@@ -35,7 +35,7 @@ class Enemy(
         if (aiActionTimer <= 0) {
             aiActionTimer = aiActionCooldown
 
-            if (distanceX < 200f) {
+            if (distanceX < 250f) {
 
                 isFacingRight = (player.x > this.x)
 

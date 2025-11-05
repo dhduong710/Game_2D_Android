@@ -277,8 +277,8 @@ class GameScreen(
     private fun checkCombat() {
         val distance = abs(player.x - enemy.x)
 
-        val hitRange = 200f
-        val skillRange = 220f
+        val hitRange = 250f
+        val skillRange = 270f
 
         val damage = 10
         val skill1Dmg = 15
